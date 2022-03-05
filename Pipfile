@@ -7,14 +7,11 @@ name = "pypi"
 flask = "*"
 flask-pymongo = "*"
 numpy = "*"
-pandas = "*"
 python-dotenv = "*"
 spotipy = "*"
 gunicorn = "*"
 pymongo = {extras = ["srv"], version = "*"}
-tensorflow = "*"
 scikit-learn = "*"
-tensorflow-recommenders = "*"
 
 [dev-packages]
 autopep8 = "*"

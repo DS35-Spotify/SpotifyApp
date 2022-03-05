@@ -38,7 +38,6 @@ def create_app():
 
             # Preference Form
             if 'track_preference' in request.form:
-
                 add_tracks_to_db(database=DB,
                                  table_name='tracks',
                                  list_of_track_ids=[
