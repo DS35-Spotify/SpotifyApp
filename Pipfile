@@ -12,6 +12,7 @@ spotipy = "*"
 gunicorn = "*"
 pymongo = {extras = ["srv"], version = "*"}
 scikit-learn = "*"
+pandas = "*"
 
 [dev-packages]
 autopep8 = "*"
