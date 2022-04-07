@@ -11,8 +11,7 @@ python-dotenv = "*"
 spotipy = "*"
 gunicorn = "*"
 pymongo = {extras = ["srv"], version = "*"}
-scikit-learn = "*"
-pandas = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 autopep8 = "*"
