@@ -1,7 +1,7 @@
 from os import getenv
 from flask_pymongo import PyMongo
 from flask import Flask, render_template, request, url_for, redirect
-# from .training import *
+# from .model_and_training import *
 from .data import *
 
 
@@ -18,12 +18,16 @@ def create_app():
 
     # HOME ROUTE ************************************************************************
 
-    @app.route("/", methods=['GET', 'POST'])
+    @ app.route("/", methods=['GET', 'POST'])
     def home_page(track_search=None,
                   artist_search=None,
                   search_results=None,
                   preferences=None,
                   recommendations=None):
+
+        # TESTING SPACE =====================================================================
+
+        # ===================================================================================
 
         # Form Requests
         if request.method == 'POST':
@@ -46,7 +50,7 @@ def create_app():
 
             # Recommendation Form
             if 'recommend' in request.form:
-                recommendations = n_nearest_tracks(database=DB)
+                recommendations = neural_net_tracks(database=DB)
             else:
                 recommendations = None
 
@@ -59,7 +63,7 @@ def create_app():
     # ************************************************************************************
 
     # RESET PREFERENCES ******************************************************************
-    @app.route('/reset_preferences')
+    @ app.route('/reset_preferences')
     def reset_preferences():
         '''Resets track preferences'''
 
@@ -71,7 +75,7 @@ def create_app():
     # *************************************************************************************
 
     # POPULATE ****************************************************************************
-    @app.route('/populate')
+    @ app.route('/populate')
     def populate(num_tracks=1000):
         '''Populates Tracks in Database'''
 

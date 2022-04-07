@@ -12,9 +12,10 @@ import numpy as np
 from bson.binary import Binary
 import pickle
 
-# For Recommending
-from sklearn.neighbors import NearestNeighbors
-import pandas as pd
+# For Neural Network Recommendations
+from keras.models import load_model
+from numpy.random import shuffle
+
 # ****************************************************
 
 # SpotiPy Client ******************************************************************
@@ -25,51 +26,74 @@ client_credentials_manager = SpotifyClientCredentials(client_id=CLIENT_ID,
 sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 # *********************************************************************************
 
-# Nearest Neighbors Track Recommender *************************************************
+# Neural Network Track Recommender ******************************************************
 
 
-def n_nearest_tracks(database, n_tracks=10):
-    ''' Generates a list of length n of nearest tracks based on audio features
-        In the form of (track_name, artist_name) tuples'''
+def neural_net_tracks(database, n_tracks=10):
 
-    # User Tracks Matrix
-    user_track_matrix = np.stack([unpickle_my_array(
-        pref['vector']) for pref in database['tracks'].find({'preference': 1})], axis=0)
+    # First we need to load the data from the database *******************************
 
-    # Possible Recommendations Matrix
-    rec_matrix = np.stack([unpickle_my_array(
-        pref['vector']) for pref in database['tracks'].find({'preference': 0})], axis=0)
+    # Load Playlist
+    playlist_vector_list = [unpickle_my_array(track['vector'])
+                            for track in database['tracks'].find({'preference': 1})]
 
-    # NEED TO NORMALIZE AUDIO FEATURES (both sets)
-    user_track_matrix = user_track_matrix / rec_matrix.max(axis=0)
-    rec_matrix = rec_matrix / rec_matrix.max(axis=0)
+    if len(playlist_vector_list) < 10:
+        print('ERROR: NOT ENOUGH TRACKS IN PLAYLIST')
+        return
 
-    # Playlist Length
-    n_pref = user_track_matrix.shape[0]
+    for i, vector in enumerate(playlist_vector_list):
+        if i == 0:
+            playlist_matrix = playlist_vector_list[i]
+        elif i < 10:
+            playlist_matrix = np.vstack(
+                (playlist_matrix, playlist_vector_list[i]))
 
-    # Number of New Tracks to Find Per Playlist Track (takes ceiling)
-    n_tracks_per_pref = int(n_tracks / n_pref) + (n_tracks % n_pref > 0)
+    playlist_matrix = playlist_matrix.reshape(1, 10, 13)
 
-    nn = NearestNeighbors(n_neighbors=n_tracks_per_pref).fit(rec_matrix)
-    distances, indices = nn.kneighbors(user_track_matrix)
+    # Load Other Tracks and their Names + Artists
+    track_info_list = [(unpickle_my_array(track['vector']), track['name'], track['artists'])
+                       for track in database['tracks'].find({'preference': 0})]
 
-    # Find Nearest n_tracks
-    indices = list(pd.DataFrame(distances.flatten(),
-                                index=indices.flatten(),
-                                columns=['Distances']
-                                ).sort_values(by='Distances',
-                                              ascending=True).iloc[:n_tracks].index)
+    # Format Playlists for Input
+    for i in range(len(track_info_list)):
+        if i == 0:
+            playlists_matrix = playlist_matrix
+        else:
+            playlists_matrix = np.vstack((playlists_matrix, playlist_matrix))
 
-    # Find Names and Artists
-    rec_naa = []
-    for index in indices:
-        search = database['tracks'].find(
-            {'preference': 0}).skip(index).limit(1)
-        for result in search:
-            rec_naa.append((result['name'], result['artists']))
+    # Format Tracks for Input
+    for i, info in enumerate(track_info_list):
+        if i == 0:
+            track_vectors = info[0]
+        else:
+            track_vectors = np.vstack((track_vectors, info[0]))
 
-    return rec_naa
-# ****************************************************************************************
+    # print(f'Playlists Shape: {playlists_matrix.shape}')
+    # print(f'Vectors Shape: {track_vectors.shape}')
+
+    # Now we need to load the model **************************************************
+
+    model = load_model('models/model0')
+    targets = model.predict(
+        x=[playlists_matrix, track_vectors],
+    )
+
+    # Names and Artists
+    naa = []
+
+    for i, target in enumerate(targets):
+        if target == 1:
+            naa.append((track_info_list[i][1], track_info_list[i][2]))
+
+    shuffle(naa)
+
+    if len(naa) <= n_tracks:
+        return naa
+    else:
+        return naa[:n_tracks]
+
+
+# ***************************************************************************************
 
 # User Song Lookup ****************************************************************
 
@@ -166,6 +190,11 @@ def add_tracks_to_db(database, table_name, list_of_track_ids, preference=0):
     # Create list of dictionaries to add to MongoDB
     tracks = []
     for i, track_id in enumerate(list_of_track_ids):
+        # Delete the track if it is already in the database
+        same_ids = [_ for _ in database['tracks'].find({'_id': track_id})]
+        if (len(same_ids) > 0):
+            database['tracks'].delete_one({'_id': track_id})
+
         # SOMETIMES SPOTIFY WON'T HAVE TRACK INFO
         # THESE TRACKS WILL BE SKIPPED
         if vector_info[i] and track_info[i]:
@@ -198,7 +227,7 @@ def add_tracks_to_db(database, table_name, list_of_track_ids, preference=0):
     return
 
 
-def update_suggestion_pool(database, num_tracks=100):
+def update_suggestion_pool(database, num_tracks=1000):
 
     # Request Cap
     num_tracks = min(num_tracks, 1000)
@@ -207,7 +236,7 @@ def update_suggestion_pool(database, num_tracks=100):
     max_tracks_per_album = 3
 
     # Get Prior Track Ids (Prevent Duplicates)
-    stored_ids = [thing['_id'] for thing in database['tracks'].find({}, '_id')]
+    stored_ids = [thing['_id'] for thing in database['tracks'].find({})]
 
     # Get Track Ids
     track_ids = []
