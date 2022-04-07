@@ -13,7 +13,7 @@ from bson.binary import Binary
 import pickle
 
 # For Neural Network Recommendations
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 from numpy.random import shuffle
 
 # ****************************************************
