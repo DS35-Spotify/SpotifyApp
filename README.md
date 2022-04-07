@@ -1,3 +1,3 @@
 # Spotify Song Suggester
 
-[Heroku Link](https://buildweek-song-suggester.herokuapp.com/)
+[Heroku Link](https://buildweek-spotify.herokuapp.com/)
