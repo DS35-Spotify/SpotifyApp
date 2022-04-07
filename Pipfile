@@ -12,7 +12,7 @@ spotipy = "*"
 gunicorn = "*"
 pymongo = {extras = ["srv"], version = "*"}
 psycopg2-binary = "*"
-keras = "*"
+tensorflow = "*"
 
 [dev-packages]
 autopep8 = "*"
