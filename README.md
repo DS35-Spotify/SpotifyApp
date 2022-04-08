@@ -2,4 +2,4 @@
 
 [Heroku Link](https://buildweek-spotify.herokuapp.com/)
 
-### Playist Must Be >= 10 Songs
+### Playlist Must Be >= 10 Songs
