@@ -68,8 +68,21 @@ def neural_net_tracks(database, n_tracks=10):
         else:
             track_vectors = np.vstack((track_vectors, info[0]))
 
-    # print(f'Playlists Shape: {playlists_matrix.shape}')
-    # print(f'Vectors Shape: {track_vectors.shape}')
+    # # Standardize the AUDIO FEATURE Scaling
+    # playlists_matrix = (playlists_matrix - playlists_matrix.min(axis=1, keepdims=True)) / \
+    #     playlists_matrix.ptp(axis=1, keepdims=True)
+
+    # # SHAPE = (SAMPLES, TRACKS, FEATURES) --> NEED TO NORMALIZE FEATURES
+    # print(playlists_matrix.shape)
+    # temp = []
+    # for a in range(playlist_matrix.shape[0]):
+    #     for b in range(playlist_matrix.shape[1]):
+    #         for c in range(playlist_matrix.shape[2]):
+    #             temp += [playlists_matrix[a][b][0]]
+    # print(min(temp), max(temp))
+
+    # track_vectors = (track_vectors - track_vectors.min(axis=0, keepdims=True)) / \
+    #     track_vectors.ptp(axis=0, keepdims=True)
 
     # Now we need to load the model **************************************************
 
